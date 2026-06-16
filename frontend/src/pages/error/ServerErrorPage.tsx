@@ -2,13 +2,13 @@ import React from 'react';
 import { Result, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
-const ForbiddenPage: React.FC = () => {
+const ServerErrorPage: React.FC = () => {
   const navigate = useNavigate();
   return (
     <Result
-      status="403"
-      title="403"
-      subTitle="抱歉，你没有权限访问此页面。"
+      status="500"
+      title="500"
+      subTitle="服务器出了点问题，请稍后再试。"
       extra={
         <Button type="primary" onClick={() => navigate('/')}>
           返回首页
@@ -18,4 +18,4 @@ const ForbiddenPage: React.FC = () => {
   );
 };
 
-export default ForbiddenPage;
+export default ServerErrorPage;

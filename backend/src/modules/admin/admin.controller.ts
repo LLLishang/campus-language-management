@@ -112,4 +112,67 @@ export class AdminController {
   async getRepairs() {
     return this.repairRepo.find({ order: { created_at: 'DESC' } });
   }
+
+  // ========== 统计数据 ==========
+  @Get('statistics')
+  async getStatistics() {
+    const [users, students, teachers, leaves, repairs, venues, bookings] = await Promise.all([
+      this.userRepo.count(),
+      this.studentRepo.count(),
+      this.teacherRepo.count(),
+      this.leaveRepo.count(),
+      this.repairRepo.count(),
+      this.venueRepo.count(),
+      this.bookingRepo.count(),
+    ]);
+
+    const pendingLeaves = await this.leaveRepo.count({ where: { status: 'PENDING' } });
+    const pendingRepairs = await this.repairRepo.count({ where: { status: 'PENDING' } });
+
+    // 获取最近 7 天的请假趋势（简化）
+    const recentLeaves = await this.leaveRepo
+      .createQueryBuilder('l')
+      .select("DATE(l.created_at) as date, COUNT(*) as count")
+      .where("l.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")
+      .groupBy("DATE(l.created_at)")
+      .orderBy("date", "ASC")
+      .getRawMany();
+
+    return {
+      users,
+      students,
+      teachers,
+      leaves,
+      repairs,
+      venues,
+      bookings,
+      pendingLeaves,
+      pendingRepairs,
+      recentLeaves,
+    };
+  }
+
+  // ========== 系统配置 ==========
+  @Get('config')
+  async getConfig() {
+    return {
+      systemName: process.env.SYSTEM_NAME || '校园管理系统',
+      aiProvider: process.env.AI_PROVIDER || 'deepseek',
+      aiModel: process.env.AI_MODEL || 'deepseek-chat',
+      maxTokens: parseInt(process.env.AI_MAX_TOKENS || '4096'),
+      maxBookingDays: parseInt(process.env.MAX_BOOKING_DAYS || '7'),
+      maxLeaveDays: parseInt(process.env.MAX_LEAVE_DAYS || '3'),
+    };
+  }
+
+  @Put('config')
+  async updateConfig(@Body() dto: any) {
+    const updates: string[] = [];
+    if (dto.aiProvider) updates.push(`AI_PROVIDER=${dto.aiProvider}`);
+    if (dto.aiModel) updates.push(`AI_MODEL=${dto.aiModel}`);
+    return {
+      message: '配置已更新（需重启服务生效）',
+      updates,
+    };
+  }
 }

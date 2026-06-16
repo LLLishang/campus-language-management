@@ -8,6 +8,8 @@ import { ApprovalModule } from './modules/approval/approval.module';
 import { VenueModule } from './modules/venue/venue.module';
 import { RepairModule } from './modules/repair/repair.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { AdminModule } from './modules/admin/admin.module';
     VenueModule,
     RepairModule,
     AdminModule,
+    NotificationModule,
+    AiModule,
   ],
 })
 export class AppModule {}

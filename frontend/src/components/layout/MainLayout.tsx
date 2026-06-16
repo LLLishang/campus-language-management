@@ -3,6 +3,7 @@ import { Layout, theme } from 'antd';
 import { Outlet } from 'react-router-dom';
 import { TopHeader } from './TopHeader';
 import { SideMenu } from './SideMenu';
+import AIFloatButton from '../ai/AIFloatButton';
 
 const { Content } = Layout;
 
@@ -26,6 +27,7 @@ export const MainLayout: React.FC = () => {
           <Outlet />
         </Content>
       </Layout>
+      <AIFloatButton />
     </Layout>
   );
 };

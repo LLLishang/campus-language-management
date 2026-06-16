@@ -20,7 +20,7 @@ const AdminOrdersPage: React.FC = () => {
         http.get('/repair/all').catch(() => ({ data: [] })),
       ]);
       const items = [
-        ...(leaveRes.data || []).map((l: any) => ({ key: `leave-${l.id}`, type: 'LEAVE', applicant: l.student_name || '未知', summary: `${l.leave_type} ${l.start_date} 第${l.start_period}-${l.end_period}节`, status: l.status, date: l.created_at })),
+        ...(leaveRes.data || []).map((l: any) => ({ key: `leave-${l.id}`, type: 'LEAVE', applicant: l.studentName || '未知', summary: `${l.leaveType} ${l.startDate} 第${l.startPeriod}-${l.endPeriod}节`, status: l.status, date: l.createdAt })),
         ...(venueRes.data || []).map((b: any) => ({ key: `venue-${b.id}`, type: 'BOOKING', applicant: b.user_name || '未知', summary: `${b.venue?.name || '场地'} ${b.booking_date}`, status: b.status, date: b.created_at })),
         ...(repairRes.data || []).map((r: any) => ({ key: `repair-${r.id}`, type: 'REPAIR', applicant: r.reporter_name || '未知', summary: r.title, status: r.status, date: r.created_at })),
       ].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());

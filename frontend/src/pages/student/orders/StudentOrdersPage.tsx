@@ -19,8 +19,8 @@ const StudentOrdersPage: React.FC = () => {
     ]).then(([leaveRes, venueRes, repairRes]) => {
       const leaves = (leaveRes.data || []).map((l: any) => ({
         id: l.id, type: '请假', icon: <EditOutlined />,
-        title: `${l.leave_type === 'SICK' ? '病假' : l.leave_type === 'PERSONAL' ? '事假' : '其他'}`,
-        date: `${l.start_date} 第${l.start_period}-${l.end_period}节`, status: l.status, desc: l.reason,
+        title: `${l.leaveType === 'SICK' ? '病假' : l.leaveType === 'PERSONAL' ? '事假' : '其他'}`,
+        date: `${l.startDate} 第${l.startPeriod}-${l.endPeriod}节`, status: l.status, desc: l.reason,
       }));
       const venues = (venueRes.data || []).map((b: any) => ({
         id: b.id, type: '场地', icon: <CalendarOutlined />,

@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RepairOrder } from './entities/repair-order.entity';
 import { RepairLog } from './entities/repair-log.entity';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/entities/notification.entity';
 
 @Injectable()
 export class RepairService {
   constructor(
     @InjectRepository(RepairOrder) private repairRepo: Repository<RepairOrder>,
     @InjectRepository(RepairLog) private logRepo: Repository<RepairLog>,
+    private notifService: NotificationService,
   ) {}
 
   async create(userId: number, dto: any) {
@@ -69,10 +72,31 @@ export class RepairService {
   async updateStatus(id: number, operatorId: number, dto: { status: string; comment?: string }) {
     const order = await this.repairRepo.findOne({ where: { id } });
     if (!order) throw new NotFoundException('报修工单不存在');
+    const oldStatus = order.status;
     order.status = dto.status;
     if (dto.status === 'COMPLETED') order.completed_at = new Date();
     await this.logRepo.save({ repair_order_id: id, operator_id: operatorId, action: 'UPDATE', comment: dto.comment });
-    return this.repairRepo.save(order);
+    const saved = await this.repairRepo.save(order);
+
+    // 发送通知给报修人
+    const statusText: Record<string, string> = {
+      IN_PROGRESS: '正在处理中',
+      COMPLETED: '已完成',
+      CANCELLED: '已关闭',
+    };
+    const text = statusText[dto.status];
+    if (text && oldStatus !== dto.status) {
+      await this.notifService.create({
+        recipientId: order.reporter_id,
+        type: NotificationType.REPAIR_UPDATE,
+        title: `报修工单${text}`,
+        content: `你提交的报修「${order.title}」状态已更新为：${text}${dto.comment ? `（${dto.comment}）` : ''}`,
+        refType: 'repair',
+        refId: id,
+      });
+    }
+
+    return saved;
   }
 
   async assign(id: number, operatorId: number, assignedTo: number) {

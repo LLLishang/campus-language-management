@@ -18,6 +18,13 @@ export class LeaveService {
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
+  // 获取原始实体（内部使用）
+  private async getEntity(id: number): Promise<LeaveRequest> {
+    const leave = await this.leaveRepo.findOne({ where: { id } });
+    if (!leave) throw new NotFoundException('请假记录不存在');
+    return leave;
+  }
+
   async getSchedule() {
     return this.scheduleRepo.find({ order: { period_no: 'ASC' } });
   }
@@ -43,10 +50,22 @@ export class LeaveService {
   async findMine(userId: number) {
     const student = await this.studentRepo.findOne({ where: { user_id: userId } });
     if (!student) return [];
-    return this.leaveRepo.find({
+    const leaves = await this.leaveRepo.find({
       where: { student_id: student.id },
       order: { created_at: 'DESC' },
     });
+    return leaves.map((l) => ({
+      id: l.id,
+      leaveType: l.leave_type,
+      startDate: l.start_date,
+      endDate: l.end_date,
+      startPeriod: l.start_period,
+      endPeriod: l.end_period,
+      reason: l.reason,
+      status: l.status,
+      createdAt: l.created_at,
+      attachmentUrls: l.attachment_urls,
+    }));
   }
 
   async findAll() {
@@ -55,19 +74,48 @@ export class LeaveService {
     for (const l of leaves) {
       const student = await this.studentRepo.findOne({ where: { id: l.student_id } });
       const user = student ? await this.userRepo.findOne({ where: { id: student.user_id } }) : null;
-      results.push({ ...l, student_name: user?.real_name, class_name: student?.class_name });
+      results.push({
+        id: l.id,
+        leaveType: l.leave_type,
+        startDate: l.start_date,
+        endDate: l.end_date,
+        startPeriod: l.start_period,
+        endPeriod: l.end_period,
+        reason: l.reason,
+        status: l.status,
+        createdAt: l.created_at,
+        attachmentUrls: l.attachment_urls,
+        studentName: user?.real_name,
+        className: student?.class_name,
+      });
     }
     return results;
   }
 
+  // 对外 API 使用，返回驼峰命名的详情
   async findOne(id: number) {
-    const leave = await this.leaveRepo.findOne({ where: { id } });
-    if (!leave) throw new NotFoundException('请假记录不存在');
-    return leave;
+    const leave = await this.getEntity(id);
+    const student = await this.studentRepo.findOne({ where: { id: leave.student_id } });
+    const user = student ? await this.userRepo.findOne({ where: { id: student.user_id } }) : null;
+    return {
+      id: leave.id,
+      studentId: leave.student_id,
+      leaveType: leave.leave_type,
+      startDate: leave.start_date,
+      endDate: leave.end_date,
+      startPeriod: leave.start_period,
+      endPeriod: leave.end_period,
+      reason: leave.reason,
+      status: leave.status,
+      createdAt: leave.created_at,
+      attachmentUrls: leave.attachment_urls,
+      studentName: user?.real_name,
+      className: student?.class_name,
+    };
   }
 
   async update(id: number, userId: number, dto: Partial<CreateLeaveDto>) {
-    const leave = await this.findOne(id);
+    const leave = await this.getEntity(id);
     const student = await this.studentRepo.findOne({ where: { user_id: userId } });
     if (!student || leave.student_id !== student.id) {
       throw new ForbiddenException('无权修改此请假申请');
@@ -85,7 +133,7 @@ export class LeaveService {
   }
 
   async cancel(id: number, userId: number) {
-    const leave = await this.findOne(id);
+    const leave = await this.getEntity(id);
     const student = await this.studentRepo.findOne({ where: { user_id: userId } });
     if (!student || leave.student_id !== student.id) {
       throw new ForbiddenException('无权撤销此请假申请');

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Layout, Space, Avatar, Dropdown, Badge, Typography } from 'antd';
-import { UserOutlined, LogoutOutlined, BellOutlined } from '@ant-design/icons';
+import { Layout, Space, Avatar, Dropdown, Typography } from 'antd';
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth.store';
 import { useNavigate } from 'react-router-dom';
+import NotificationBell from '../notification/NotificationBell';
 
 const { Header } = Layout;
 const { Text } = Typography;
@@ -52,12 +53,7 @@ export const TopHeader: React.FC = () => {
       }}
     >
       <Space size="large">
-        <Badge count={0} size="small">
-          <BellOutlined
-            style={{ fontSize: 18, cursor: 'pointer' }}
-            onClick={() => navigate('/notifications')}
-          />
-        </Badge>
+        <NotificationBell />
         <Dropdown menu={dropdownItems} placement="bottomRight">
           <Space style={{ cursor: 'pointer' }}>
             <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1677FF' }} />

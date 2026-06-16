@@ -8,6 +8,7 @@ import { LeaveApproval } from '../leave/entities/leave-approval.entity';
 import { Student } from '../user/entities/student.entity';
 import { Teacher } from '../user/entities/teacher.entity';
 import { User } from '../user/entities/user.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { User } from '../user/entities/user.entity';
       secret: process.env.JWT_SECRET || 'campus-management-jwt-secret-2026',
       signOptions: { expiresIn: '2h' },
     }),
+    NotificationModule,
   ],
   controllers: [ApprovalController],
   providers: [ApprovalService],

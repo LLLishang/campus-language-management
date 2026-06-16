@@ -6,6 +6,8 @@ import { LeaveApproval } from '../leave/entities/leave-approval.entity';
 import { Student } from '../user/entities/student.entity';
 import { Teacher } from '../user/entities/teacher.entity';
 import { User } from '../user/entities/user.entity';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/entities/notification.entity';
 
 @Injectable()
 export class ApprovalService {
@@ -15,6 +17,7 @@ export class ApprovalService {
     @InjectRepository(Student) private studentRepo: Repository<Student>,
     @InjectRepository(Teacher) private teacherRepo: Repository<Teacher>,
     @InjectRepository(User) private userRepo: Repository<User>,
+    private notifService: NotificationService,
   ) {}
 
   async getPending(userId: number) {
@@ -75,6 +78,20 @@ export class ApprovalService {
       action: 'APPROVE',
     });
     await this.approvalRepo.save(approval);
+
+    // 发送通知给学生
+    const student = await this.studentRepo.findOne({ where: { id: leave.student_id } });
+    if (student) {
+      await this.notifService.create({
+        recipientId: student.user_id,
+        type: NotificationType.LEAVE_UPDATE,
+        title: '请假申请已通过',
+        content: `你提交的 ${leave.start_date} 第${leave.start_period}-${leave.end_period}节请假申请已被批准。`,
+        refType: 'leave',
+        refId: leaveId,
+      });
+    }
+
     return { message: '已批准' };
   }
 
@@ -86,13 +103,28 @@ export class ApprovalService {
     leave.status = 'REJECTED';
     await this.leaveRepo.save(leave);
 
+    const reason = comment || '不符合审批条件';
     const approval = this.approvalRepo.create({
       leave_request_id: leaveId,
       approver_id: userId,
       action: 'REJECT',
-      comment: comment || '不符合审批条件',
+      comment: reason,
     });
     await this.approvalRepo.save(approval);
+
+    // 发送通知给学生
+    const student = await this.studentRepo.findOne({ where: { id: leave.student_id } });
+    if (student) {
+      await this.notifService.create({
+        recipientId: student.user_id,
+        type: NotificationType.LEAVE_UPDATE,
+        title: '请假申请已被驳回',
+        content: `你提交的 ${leave.start_date} 第${leave.start_period}-${leave.end_period}节请假申请已被驳回。原因：${reason}`,
+        refType: 'leave',
+        refId: leaveId,
+      });
+    }
+
     return { message: '已驳回' };
   }
 }
